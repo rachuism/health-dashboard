@@ -1,0 +1,19 @@
+# Secrets — never commit real OAuth credentials / tokens
+request.http
+
+# Compiled TypeScript output
+*.js
+*.js.map
+charts/*.js
+charts/*.js.map
+
+# Dependencies
+node_modules/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Local Claude Code settings (machine-specific)
+.claude/settings.local.json

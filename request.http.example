@@ -1,0 +1,30 @@
+### File Variables for the Codelab
+### Copy this file to `request.http` and fill in your own credentials.
+### `request.http` is gitignored so your secrets are never committed.
+@client_id = YOUR_CLIENT_ID.apps.googleusercontent.com
+@secret = YOUR_CLIENT_SECRET
+@redirect_uri = https://www.google.com
+@accessToken={{user.response.body.access_token}}
+@refreshToken={{user.response.body.refresh_token}}
+
+### Google Health API Rest Client Example
+
+### Authorization String
+https://accounts.google.com/o/oauth2/v2/auth?client_id={{client_id}}&redirect_uri={{redirect_uri}}&response_type=code&access_type=offline&scope=https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly
+
+### AUTHORIZATION ENDPOINTS
+######################################################################
+# @name user
+POST https://oauth2.googleapis.com/token
+Content-Type: application/x-www-form-urlencoded
+
+code=YOUR_AUTHORIZATION_CODE&client_id={{client_id}}&client_secret={{secret}}&redirect_uri={{redirect_uri}}&grant_type=authorization_code
+
+
+### users.dataTypes.dataPoints
+#####################################################
+
+### LIST exercise
+GET https://health.googleapis.com/v4/users/me/dataTypes/exercise/dataPoints
+Authorization: Bearer {{accessToken}}
+Accept: application/json
