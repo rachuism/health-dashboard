@@ -12,4 +12,4 @@
 //      Testing status.
 //
 // Then paste the client ID below.
-export const GOOGLE_CLIENT_ID = "YOUR_CLIENT_ID.apps.googleusercontent.com";
+export const GOOGLE_CLIENT_ID = "376252375726-8kqjpnmljh8d2rfnr7b3b9pse0rh0vgo.apps.googleusercontent.com";
