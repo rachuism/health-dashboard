@@ -186,6 +186,21 @@
       color: var(--ok);
     }
 
+    .auth-state {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--muted);
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: rgba(17, 33, 45, 0.06);
+      width: fit-content;
+    }
+
+    .auth-state.ok {
+      color: var(--ok);
+      background: rgba(6, 118, 71, 0.1);
+    }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -396,11 +411,13 @@
 
     <section class="panel controls">
       <div class="control-row">
-        <label for="tokenInput">Access Token</label>
-        <input id="tokenInput" type="text" placeholder="Paste Bearer token here" autocomplete="off" />
+        <label>Google Account</label>
+        <div id="authState" class="auth-state">Not signed in</div>
       </div>
       <div class="button-row">
-        <button class="btn-primary" id="fetchBtn" type="button">Fetch From API</button>
+        <button class="btn-primary" id="signInBtn" type="button">Sign in with Google</button>
+        <button class="btn-secondary" id="fetchBtn" type="button" disabled>Fetch My Health Data</button>
+        <button class="btn-neutral" id="signOutBtn" type="button" hidden>Sign out</button>
         <button class="btn-secondary" id="renderBtn" type="button">Render From JSON</button>
         <button class="btn-neutral" id="clearBtn" type="button">Clear</button>
       </div>
@@ -451,6 +468,7 @@
     </section>
   </main>
 
+  <script src="https://accounts.google.com/gsi/client" async></script>
   <script type="module" src="./dashboard.js"></script>
 </body>
 </html>

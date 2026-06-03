@@ -13,11 +13,22 @@ function getRequiredElement<T extends Element>(id: string, ctor: { new (): T; pr
   return element;
 }
 
-export const tokenInput = getRequiredElement("tokenInput", HTMLInputElement);
 export const jsonInput = getRequiredElement("jsonInput", HTMLTextAreaElement);
+export const signInBtn = getRequiredElement("signInBtn", HTMLButtonElement);
+export const signOutBtn = getRequiredElement("signOutBtn", HTMLButtonElement);
 export const fetchBtn = getRequiredElement("fetchBtn", HTMLButtonElement);
 export const renderBtn = getRequiredElement("renderBtn", HTMLButtonElement);
 export const clearBtn = getRequiredElement("clearBtn", HTMLButtonElement);
+
+const authStateEl = getRequiredElement("authState", HTMLDivElement);
+
+export function setAuthState(signedIn: boolean): void {
+  authStateEl.textContent = signedIn ? "Signed in to Google" : "Not signed in";
+  authStateEl.className = "auth-state" + (signedIn ? " ok" : "");
+  signInBtn.hidden = signedIn;
+  signOutBtn.hidden = !signedIn;
+  fetchBtn.disabled = !signedIn;
+}
 
 const statusEl = getRequiredElement("status", HTMLDivElement);
 const totalPointsEl = getRequiredElement("totalPoints", HTMLParagraphElement);

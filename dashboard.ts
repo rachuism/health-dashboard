@@ -1,4 +1,5 @@
 import { fetchExerciseDataPoints } from "./api.js";
+import { getValidToken, requestToken, signOut } from "./auth.js";
 import { type ActivityPoint, extractJsonText, getPointsFromParsedResponse } from "./parse.js";
 import {
   clearBtn,
@@ -8,8 +9,10 @@ import {
   renderBtn,
   renderItems,
   renderMetrics,
+  setAuthState,
   setStatus,
-  tokenInput,
+  signInBtn,
+  signOutBtn,
 } from "./ui.js";
 import { clearDistanceChart, drawDistanceChart } from "./charts/distance.js";
 import { clearZoneChart, drawActiveZoneChart } from "./charts/zone.js";
@@ -46,16 +49,18 @@ function parseAndRender(): void {
 }
 
 async function fetchFromApi(): Promise<void> {
-  const token = tokenInput.value.trim();
-  if (!token) {
-    setStatus("Access token is required to fetch data.", "error");
-    return;
-  }
-
   setStatus("Fetching data from API...");
 
   try {
-    const result = await fetchExerciseDataPoints(token);
+    let token = await getValidToken();
+    let result = await fetchExerciseDataPoints(token);
+
+    // Token may have been revoked/expired server-side: refresh once and retry.
+    if (result.status === 401) {
+      token = await requestToken(false);
+      result = await fetchExerciseDataPoints(token);
+    }
+
     jsonInput.value = result.bodyText;
 
     if (!result.ok) {
@@ -70,6 +75,25 @@ async function fetchFromApi(): Promise<void> {
   }
 }
 
+async function signIn(): Promise<void> {
+  setStatus("Opening Google sign-in...");
+  try {
+    await requestToken(true);
+    setAuthState(true);
+    setStatus("Signed in. Fetching your health data...");
+    await fetchFromApi();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown error";
+    setStatus(`Sign-in failed: ${message}`, "error");
+  }
+}
+
+function handleSignOut(): void {
+  signOut();
+  setAuthState(false);
+  setStatus("Signed out.");
+}
+
 function clearAll(): void {
   jsonInput.value = "";
   clearMetricsAndItems();
@@ -78,6 +102,10 @@ function clearAll(): void {
   setStatus("Cleared.");
 }
 
+signInBtn.addEventListener("click", signIn);
+signOutBtn.addEventListener("click", handleSignOut);
 fetchBtn.addEventListener("click", fetchFromApi);
 renderBtn.addEventListener("click", parseAndRender);
 clearBtn.addEventListener("click", clearAll);
+
+setAuthState(false);
