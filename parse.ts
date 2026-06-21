@@ -69,12 +69,17 @@ function matchesMetricKey(key: string, terms: string[]): boolean {
   return terms.some((term) => normalized.includes(term));
 }
 
-function findMetricValue(value: unknown, terms: string[]): number | null {
+type MetricMatch = { value: number; key: string };
+
+// Find the first numeric value whose field name matches one of `terms`,
+// returning both the value and the matched key (joined with the nested key
+// when the value lives one level down) so callers can read the field's unit.
+function findMetricMatch(value: unknown, terms: string[]): MetricMatch | null {
   if (value == null) return null;
 
   if (Array.isArray(value)) {
     for (const entry of value) {
-      const found = findMetricValue(entry, terms);
+      const found = findMetricMatch(entry, terms);
       if (found != null) return found;
     }
     return null;
@@ -87,23 +92,41 @@ function findMetricValue(value: unknown, terms: string[]): number | null {
   for (const [key, entry] of Object.entries(value)) {
     if (matchesMetricKey(key, terms)) {
       const numeric = toNumber(entry as PrimitiveMetric);
-      if (numeric != null) return numeric;
+      if (numeric != null) return { value: numeric, key };
 
       if (entry && typeof entry === "object") {
-        for (const nested of Object.values(entry)) {
+        for (const [nestedKey, nested] of Object.entries(entry)) {
           const nestedNumeric = toNumber(nested as PrimitiveMetric);
-          if (nestedNumeric != null) return nestedNumeric;
+          if (nestedNumeric != null) return { value: nestedNumeric, key: `${key} ${nestedKey}` };
         }
       }
     }
   }
 
   for (const entry of Object.values(value)) {
-    const found = findMetricValue(entry, terms);
+    const found = findMetricMatch(entry, terms);
     if (found != null) return found;
   }
 
   return null;
+}
+
+function findMetricValue(value: unknown, terms: string[]): number | null {
+  return findMetricMatch(value, terms)?.value ?? null;
+}
+
+// Convert a distance value to kilometers using only the unit carried by its own
+// field name. A bare/unitless `distance` is treated as meters, matching the
+// Google Health/Fitness convention. `kilometre` must be checked before `metre`
+// since it contains it as a substring.
+function distanceToKm(value: number, key: string): number {
+  const normalized = key.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (normalized.includes("mile")) return value * 1.60934;
+  if (normalized.includes("kilometer") || normalized.includes("kilometre") || normalized.includes("km")) {
+    return value;
+  }
+  if (normalized.includes("meter") || normalized.includes("metre")) return value / 1000;
+  return value / 1000; // default: meters (API convention)
 }
 
 export function extractDistanceKm(point: ActivityPoint): number | null {
@@ -118,13 +141,10 @@ export function extractDistanceKm(point: ActivityPoint): number | null {
     "distancemiles",
     "distance",
   ];
-  const found = findMetricValue(point, directTerms);
-  if (found == null) return null;
+  const match = findMetricMatch(point, directTerms);
+  if (match == null) return null;
 
-  const serialized = JSON.stringify(point).toLowerCase();
-  if (serialized.includes("mile")) return found * 1.60934;
-  if (serialized.includes("meter") || serialized.includes("metre")) return found / 1000;
-  return found;
+  return distanceToKm(match.value, match.key);
 }
 
 export function extractActiveZoneMinutes(point: ActivityPoint): number | null {
