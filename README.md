@@ -26,17 +26,19 @@ Google** opens Google's consent popup and returns a short-lived access token,
 which the app uses to call the Health API. Expired tokens are refreshed silently
 on a `401`.
 
-## Getting started
+## Getting started (owner setup)
 
-1. **Google Cloud setup** (one-time):
+Do this once, as the person hosting the dashboard.
+
+1. **Google Cloud setup**:
    - Enable the **Health API** for your project.
    - On the **OAuth consent screen**, add the scope
      `https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly`.
-     While the app is in *Testing* status, add your Google account under
-     **Test users** (restricted scopes only allow listed testers).
-   - Create an OAuth **client ID** of type **Web application**, and add your
-     serving origin (e.g. `http://localhost:3000`) under
-     **Authorized JavaScript origins**.
+     While the app is in *Testing* status, only accounts listed under
+     **Test users** can sign in (restricted scopes require this).
+   - Create an OAuth **client ID** of type **Web application**, and add every
+     origin you'll serve from (e.g. `http://localhost:3000` for local dev,
+     plus your deployed `https://` origin) under **Authorized JavaScript origins**.
 2. Paste the client ID into `config.ts` (`GOOGLE_CLIENT_ID`).
 3. Compile the TypeScript: `npx tsc`.
 4. Serve the folder over HTTP (ESM modules and Google sign-in don't work over
@@ -45,6 +47,30 @@ on a `401`.
 
 `request.http` (gitignored) remains as a manual REST-client reference for the raw
 API; it is no longer needed for normal use.
+
+### Sharing it with other people
+
+The app is entirely client-side — there's no backend and no shared data — so
+each person who signs in only ever sees their own Google Health data. To invite
+someone:
+
+1. Deploy the compiled site somewhere with a stable HTTPS origin (e.g. Vercel:
+   import the repo, set the build command to `npx tsc`, output directory `.`),
+   then add that origin under **Authorized JavaScript origins** as above.
+2. In **Google Cloud Console → APIs & Services → OAuth consent screen → Test
+   users**, add the email of everyone you want to have access (up to 100 while
+   the app is in *Testing* status).
+3. Send them the deployed URL. That's it — no local setup, no client ID, no
+   build step on their end.
+
+Each invited person must accept the tester invite Google emails them before
+their sign-in will work; if someone tries before being added, Google shows its
+own "access blocked" screen rather than the dashboard silently failing.
+
+Going fully public (anyone, without being added as a tester) would require
+publishing the OAuth consent screen and passing Google's verification —
+including a security assessment, since the Health scope is restricted — which
+is out of scope for a small-group setup like this.
 
 ## Note on credentials
 
