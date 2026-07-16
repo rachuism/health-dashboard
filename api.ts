@@ -1,4 +1,4 @@
-const API_URL = "https://health.googleapis.com/v4/users/me/dataTypes/exercise/dataPoints";
+const API_BASE = "https://health.googleapis.com/v4/users/me/dataTypes";
 
 export type ApiFetchResult = {
   ok: boolean;
@@ -6,8 +6,8 @@ export type ApiFetchResult = {
   bodyText: string;
 };
 
-export async function fetchExerciseDataPoints(token: string): Promise<ApiFetchResult> {
-  const response = await fetch(API_URL, {
+export async function fetchDataPoints(token: string, dataType: string): Promise<ApiFetchResult> {
+  const response = await fetch(`${API_BASE}/${dataType}/dataPoints`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,

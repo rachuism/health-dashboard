@@ -1,4 +1,4 @@
-import { fetchExerciseDataPoints } from "./api.js";
+import { fetchDataPoints } from "./api.js";
 import { getValidToken, requestToken, signOut } from "./auth.js";
 import { type ActivityPoint, extractJsonText, getPointsFromParsedResponse } from "./parse.js";
 import {
@@ -16,6 +16,7 @@ import {
 } from "./ui.js";
 import { clearDistanceChart, drawDistanceChart } from "./charts/distance.js";
 import { clearZoneChart, drawActiveZoneChart } from "./charts/zone.js";
+import { clearVitalsRings, drawHrvRing, drawRestingHeartRateRing, drawSleepRing } from "./charts/vitals.js";
 
 function renderCharts(points: ActivityPoint[]): void {
   drawDistanceChart(points);
@@ -48,17 +49,36 @@ function parseAndRender(): void {
   );
 }
 
+// Vitals (HRV/RHR/sleep) share the already-validated token from the caller
+// instead of each retrying 401s independently — auth.ts's requestToken()
+// keeps only one pending request at a time, so concurrent retries would
+// cancel each other. A failed/empty fetch here just renders that ring's
+// empty state; it must not affect the exercise distance/zone rendering.
+async function fetchVitalMetric(
+  token: string,
+  dataType: string,
+  render: (points: ActivityPoint[]) => void
+): Promise<void> {
+  try {
+    const result = await fetchDataPoints(token, dataType);
+    const points = result.ok ? getPointsFromParsedResponse(JSON.parse(result.bodyText)) : [];
+    render(points);
+  } catch {
+    render([]);
+  }
+}
+
 async function fetchFromApi(): Promise<void> {
   setStatus("Fetching data from API...");
 
   try {
     let token = await getValidToken();
-    let result = await fetchExerciseDataPoints(token);
+    let result = await fetchDataPoints(token, "exercise");
 
     // Token may have been revoked/expired server-side: refresh once and retry.
     if (result.status === 401) {
       token = await requestToken(false);
-      result = await fetchExerciseDataPoints(token);
+      result = await fetchDataPoints(token, "exercise");
     }
 
     jsonInput.value = result.bodyText;
@@ -69,6 +89,12 @@ async function fetchFromApi(): Promise<void> {
     }
 
     parseAndRender();
+
+    await Promise.all([
+      fetchVitalMetric(token, "heart-rate-variability", drawHrvRing),
+      fetchVitalMetric(token, "daily-resting-heart-rate", drawRestingHeartRateRing),
+      fetchVitalMetric(token, "sleep", drawSleepRing),
+    ]);
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown error";
     setStatus(`Request failed: ${message}`, "error");
@@ -99,6 +125,7 @@ function clearAll(): void {
   clearMetricsAndItems();
   clearDistanceChart();
   clearZoneChart();
+  clearVitalsRings();
   setStatus("Cleared.");
 }
 

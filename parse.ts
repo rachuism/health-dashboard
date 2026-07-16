@@ -157,6 +157,57 @@ export function extractActiveZoneMinutes(point: ActivityPoint): number | null {
   ]);
 }
 
+export function extractHrvMs(point: ActivityPoint): number | null {
+  return findMetricValue(point, [
+    "rootmeansquareofsuccessivedifferencesmilliseconds",
+    "standarddeviationmilliseconds",
+    "rmssd",
+  ]);
+}
+
+export function extractRestingHeartRateBpm(point: ActivityPoint): number | null {
+  return findMetricValue(point, ["beatsperminute"]);
+}
+
+type SleepStagesSummary = { type?: string; minutes?: PrimitiveMetric };
+
+export function extractSleepMinutes(point: ActivityPoint): number {
+  const summary = (point as { summary?: { stagesSummary?: SleepStagesSummary[] } }).summary;
+  const stages = summary?.stagesSummary;
+  if (!Array.isArray(stages)) return 0;
+
+  return stages.reduce((total, stage) => {
+    if (stage?.type === "AWAKE") return total;
+    return total + (toNumber(stage?.minutes) ?? 0);
+  }, 0);
+}
+
+// API list endpoints return points in chronological order, so the last
+// element with an extractable value is the most recent reading.
+export function latestHrvMs(points: ActivityPoint[]): number | null {
+  for (let i = points.length - 1; i >= 0; i -= 1) {
+    const value = extractHrvMs(points[i]);
+    if (value != null) return value;
+  }
+  return null;
+}
+
+export function latestRestingHeartRateBpm(points: ActivityPoint[]): number | null {
+  for (let i = points.length - 1; i >= 0; i -= 1) {
+    const value = extractRestingHeartRateBpm(points[i]);
+    if (value != null) return value;
+  }
+  return null;
+}
+
+export function aggregateSleepMinutes(points: ActivityPoint[]): number {
+  let total = 0;
+  for (const point of points) {
+    total += extractSleepMinutes(point);
+  }
+  return total;
+}
+
 export function formatDistanceLabel(distanceKm: number | null): string {
   if (distanceKm == null || !Number.isFinite(distanceKm)) return "-";
   if (distanceKm >= 1) return `${distanceKm.toFixed(distanceKm >= 10 ? 0 : 1)} km`;

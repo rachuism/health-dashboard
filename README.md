@@ -1,7 +1,8 @@
 # Health Dashboard
 
-A small browser dashboard that fetches and visualizes Google Health API
-activity data (exercise data points), with distance and active-zone charts.
+A small browser dashboard that fetches and visualizes Google Health API data —
+exercise (distance, active-zone minutes), heart rate variability, resting
+heart rate, and sleep — as a dark, Bevel/Whoop-style set of ring charts.
 
 ## Modules
 
@@ -11,11 +12,13 @@ activity data (exercise data points), with distance and active-zone charts.
 | `dashboard.ts` | Entry point — wires events, orchestrates auth → fetch → parse → render |
 | `auth.ts` | Google sign-in via Google Identity Services (in-browser OAuth token flow) |
 | `config.ts` | Your OAuth client ID (not a secret) |
-| `api.ts` | `fetchExerciseDataPoints()` — Health API call (no DOM) |
+| `api.ts` | `fetchDataPoints(token, dataType)` — Health API call (no DOM) |
 | `parse.ts` | Types, extraction, and formatting (no DOM) |
 | `ui.ts` | DOM refs, status, auth state, metric/item rendering |
 | `charts/distance.ts` | Distance-over-time chart |
-| `charts/zone.ts` | Active-zone chart |
+| `charts/zone.ts` | Active-zone-minutes ring |
+| `charts/ring.ts` | Shared SVG ring renderer (progress or static/decorative) used by all ring charts |
+| `charts/vitals.ts` | VFC (HRV), RHR, and sleep rings |
 
 ## Authentication
 
@@ -32,10 +35,16 @@ Do this once, as the person hosting the dashboard.
 
 1. **Google Cloud setup**:
    - Enable the **Health API** for your project.
-   - On the **OAuth consent screen**, add the scope
-     `https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly`.
+   - On the **OAuth consent screen**, add these three scopes (all
+     "Restricted", same tier — no extra verification burden from adding
+     them):
+     - `https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly`
+     - `https://www.googleapis.com/auth/googlehealth.health_metrics_and_measurements.readonly`
+     - `https://www.googleapis.com/auth/googlehealth.sleep.readonly`
      While the app is in *Testing* status, only accounts listed under
-     **Test users** can sign in (restricted scopes require this).
+     **Test users** can sign in (restricted scopes require this). Anyone who
+     signed in before these scopes were added needs to sign in again once to
+     grant them.
    - Create an OAuth **client ID** of type **Web application**, and add every
      origin you'll serve from (e.g. `http://localhost:3000` for local dev,
      plus your deployed `https://` origin) under **Authorized JavaScript origins**.

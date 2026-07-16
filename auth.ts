@@ -26,7 +26,11 @@ declare const google: {
   };
 };
 
-const SCOPE = "https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly";
+const SCOPE = [
+  "https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly",
+  "https://www.googleapis.com/auth/googlehealth.health_metrics_and_measurements.readonly",
+  "https://www.googleapis.com/auth/googlehealth.sleep.readonly",
+].join(" ");
 // Refresh a little before the real expiry so an in-flight request never races it.
 const EXPIRY_SKEW_MS = 60_000;
 
