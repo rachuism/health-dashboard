@@ -2,9 +2,11 @@
   "name": "health-dashboard",
   "private": true,
   "devDependencies": {
-    "typescript": "^5.6.0"
+    "typescript": "^5.9.3",
+    "@types/node": "^22.0.0"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "tsc && node --test parse.test.js"
   }
 }

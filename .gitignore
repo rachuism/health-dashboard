@@ -9,6 +9,10 @@ charts/*.js.map
 
 # Dependencies
 node_modules/
+# Not committed: this machine's npm registry (Microsoft's internal feed)
+# gets baked into resolved/integrity URLs, which Vercel and other machines
+# can't fetch from.
+package-lock.json
 
 # Editor / OS
 .DS_Store

@@ -6,7 +6,8 @@
     "lib": ["DOM", "ES2022"],
     "strict": true,
     "noEmitOnError": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["node"]
   },
   "include": ["*.ts", "charts/*.ts"]
 }
