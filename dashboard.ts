@@ -6,6 +6,7 @@ import {
   clearMetricsAndItems,
   fetchBtn,
   jsonInput,
+  mockBtn,
   renderBtn,
   renderItems,
   renderMetrics,
@@ -17,6 +18,12 @@ import {
 import { clearDistanceChart, drawDistanceChart } from "./charts/distance.js";
 import { clearZoneChart, drawActiveZoneChart } from "./charts/zone.js";
 import { clearVitalsRings, drawHrvRing, drawRestingHeartRateRing, drawSleepRing } from "./charts/vitals.js";
+import {
+  getMockExercisePoints,
+  getMockHrvPoints,
+  getMockRestingHeartRatePoints,
+  getMockSleepPoints,
+} from "./mock.js";
 
 function renderCharts(points: ActivityPoint[]): void {
   drawDistanceChart(points);
@@ -120,6 +127,18 @@ function handleSignOut(): void {
   setStatus("Signed out.");
 }
 
+function loadMockData(): void {
+  const points = getMockExercisePoints();
+  jsonInput.value = JSON.stringify({ point: points }, null, 2);
+  renderMetrics(points);
+  renderCharts(points);
+  renderItems(points);
+  drawHrvRing(getMockHrvPoints());
+  drawRestingHeartRateRing(getMockRestingHeartRatePoints());
+  drawSleepRing(getMockSleepPoints());
+  setStatus("Showing mock data — not from your account.", "ok");
+}
+
 function clearAll(): void {
   jsonInput.value = "";
   clearMetricsAndItems();
@@ -133,6 +152,7 @@ signInBtn.addEventListener("click", signIn);
 signOutBtn.addEventListener("click", handleSignOut);
 fetchBtn.addEventListener("click", fetchFromApi);
 renderBtn.addEventListener("click", parseAndRender);
+mockBtn.addEventListener("click", loadMockData);
 clearBtn.addEventListener("click", clearAll);
 
 setAuthState(false);

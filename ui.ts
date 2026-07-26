@@ -18,6 +18,7 @@ export const signInBtn = getRequiredElement("signInBtn", HTMLButtonElement);
 export const signOutBtn = getRequiredElement("signOutBtn", HTMLButtonElement);
 export const fetchBtn = getRequiredElement("fetchBtn", HTMLButtonElement);
 export const renderBtn = getRequiredElement("renderBtn", HTMLButtonElement);
+export const mockBtn = getRequiredElement("mockBtn", HTMLButtonElement);
 export const clearBtn = getRequiredElement("clearBtn", HTMLButtonElement);
 
 const authStateEl = getRequiredElement("authState", HTMLDivElement);

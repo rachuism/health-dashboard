@@ -14,6 +14,7 @@ heart rate, and sleep — as a dark, Bevel/Whoop-style set of ring charts.
 | `config.ts` | Your OAuth client ID (not a secret) |
 | `api.ts` | `fetchDataPoints(token, dataType)` — Health API call (no DOM) |
 | `parse.ts` | Types, extraction, and formatting (no DOM) |
+| `mock.ts` | Sample data for the "Load Mock Data" button (no DOM, no API calls) |
 | `ui.ts` | DOM refs, status, auth state, metric/item rendering |
 | `charts/distance.ts` | Distance-over-time chart |
 | `charts/zone.ts` | Active-zone-minutes ring |
