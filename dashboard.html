@@ -275,6 +275,14 @@
       overflow: visible;
     }
 
+    .chart-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.4;
+      text-align: center;
+    }
+
     .metric {
       border-radius: 14px;
       background: linear-gradient(150deg, var(--panel), #0d1119);
@@ -396,7 +404,7 @@
   <main class="shell">
     <section class="header">
       <h1>Activity Dashboard</h1>
-      <p class="subtitle">Feed this with your Google Health API response and it auto-builds metrics + recent data points.</p>
+      <p class="subtitle">Your raw Google Health data, as-is — no proprietary recovery score, no black-box interpretation.</p>
     </section>
 
     <section class="panel controls">
@@ -437,6 +445,7 @@
         <div class="donut-wrap">
           <svg id="hrvChart" viewBox="0 0 220 220" aria-label="Heart rate variability"></svg>
         </div>
+        <p class="chart-note">Raw HRV (RMSSD). No universal "good" number, so no target or score is shown.</p>
       </article>
 
       <article class="chart-card">
@@ -447,6 +456,7 @@
         <div class="donut-wrap">
           <svg id="rhrChart" viewBox="0 0 220 220" aria-label="Resting heart rate"></svg>
         </div>
+        <p class="chart-note">Raw resting heart rate, shown as-is — not scored against anything.</p>
       </article>
 
       <article class="chart-card">
@@ -457,6 +467,7 @@
         <div class="donut-wrap">
           <svg id="sleepChart" viewBox="0 0 220 220" aria-label="Sleep"></svg>
         </div>
+        <p class="chart-note">Total sleep minus awake time. The 8h ring is a common reference, not a verdict.</p>
       </article>
     </section>
 
