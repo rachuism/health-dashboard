@@ -275,29 +275,6 @@
       overflow: visible;
     }
 
-    .donut-center {
-      position: absolute;
-      display: grid;
-      place-items: center;
-      text-align: center;
-      gap: 2px;
-      pointer-events: none;
-    }
-
-    .donut-value {
-      font-size: 2.1rem;
-      font-weight: 700;
-      line-height: 1;
-    }
-
-    .donut-label {
-      color: var(--muted);
-      font-family: "IBM Plex Mono", monospace;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.28px;
-    }
-
     .metric {
       border-radius: 14px;
       background: linear-gradient(150deg, var(--panel), #0d1119);
@@ -499,10 +476,6 @@
         </div>
         <div class="donut-wrap">
           <svg id="zoneChart" viewBox="0 0 220 220" aria-label="Active zone minutes chart"></svg>
-          <div class="donut-center">
-            <div id="zoneValue" class="donut-value">0</div>
-            <div class="donut-label">minutes</div>
-          </div>
         </div>
       </article>
     </section>

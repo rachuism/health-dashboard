@@ -13,14 +13,12 @@ function getRequired<T extends Element>(id: string, ctor: { new (): T; prototype
 
 const zoneChartSvg = getRequired("zoneChart", SVGSVGElement);
 const zoneSummaryEl = getRequired("zoneSummary", HTMLSpanElement);
-const zoneValueEl = getRequired("zoneValue", HTMLDivElement);
 
 export function drawActiveZoneChart(points: ActivityPoint[]): void {
   const totalMinutes = aggregateActiveZoneMinutes(points);
   const progress = totalMinutes / ACTIVE_ZONE_GOAL;
   const remaining = Math.max(ACTIVE_ZONE_GOAL - totalMinutes, 0);
 
-  zoneValueEl.textContent = String(Math.round(totalMinutes));
   zoneSummaryEl.textContent = remaining > 0 ? `${remaining}m remaining` : "Goal reached";
 
   renderRing(zoneChartSvg, {
@@ -36,5 +34,4 @@ export function drawActiveZoneChart(points: ActivityPoint[]): void {
 export function clearZoneChart(): void {
   clearRing(zoneChartSvg);
   zoneSummaryEl.textContent = `Goal ${ACTIVE_ZONE_GOAL}m`;
-  zoneValueEl.textContent = "0";
 }
