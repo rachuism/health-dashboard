@@ -1,5 +1,8 @@
 # Secrets — never commit real OAuth credentials / tokens
 request.http
+.env
+.env.local
+.vercel
 
 # Compiled TypeScript output
 *.js

@@ -13,3 +13,17 @@
 //
 // Then paste the client ID below.
 export const GOOGLE_CLIENT_ID = "376252375726-8kqjpnmljh8d2rfnr7b3b9pse0rh0vgo.apps.googleusercontent.com";
+
+// Strava API client ID. Also NOT a secret — safe in frontend code. The client
+// *secret* lives only in the STRAVA_CLIENT_SECRET Vercel env var, read by
+// api/strava-token.ts; it must never appear here or anywhere in the browser.
+//
+// Get one at: https://www.strava.com/settings/api
+//   1. Create an API application. Note the Client ID and Client Secret.
+//   2. Set "Authorization Callback Domain" to the bare domain you serve from
+//      (e.g. localhost for dev, your deployed domain for prod — Strava only
+//      allows one callback domain per app, so most people register a second,
+//      dev-only app for localhost).
+//
+// Then paste the client ID below.
+export const STRAVA_CLIENT_ID = "";

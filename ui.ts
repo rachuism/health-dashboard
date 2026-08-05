@@ -1,9 +1,11 @@
 import {
   type ActivityPoint,
   durationMinutes,
+  formatDistanceLabel,
   nanosToDateString,
   pickActivityLabel,
 } from "./parse.js";
+import type { StravaActivity } from "./stravaApi.js";
 
 function getRequiredElement<T extends Element>(id: string, ctor: { new (): T; prototype: T }): T {
   const element = document.getElementById(id);
@@ -21,6 +23,9 @@ export const renderBtn = getRequiredElement("renderBtn", HTMLButtonElement);
 export const mockBtn = getRequiredElement("mockBtn", HTMLButtonElement);
 export const clearBtn = getRequiredElement("clearBtn", HTMLButtonElement);
 
+export const connectStravaBtn = getRequiredElement("connectStravaBtn", HTMLButtonElement);
+export const disconnectStravaBtn = getRequiredElement("disconnectStravaBtn", HTMLButtonElement);
+
 const authStateEl = getRequiredElement("authState", HTMLDivElement);
 
 export function setAuthState(signedIn: boolean): void {
@@ -29,6 +34,15 @@ export function setAuthState(signedIn: boolean): void {
   signInBtn.hidden = signedIn;
   signOutBtn.hidden = !signedIn;
   fetchBtn.disabled = !signedIn;
+}
+
+const stravaAuthStateEl = getRequiredElement("stravaAuthState", HTMLDivElement);
+
+export function setStravaAuthState(connected: boolean): void {
+  stravaAuthStateEl.textContent = connected ? "Connected to Strava" : "Not connected";
+  stravaAuthStateEl.className = "auth-state" + (connected ? " ok" : "");
+  connectStravaBtn.hidden = connected;
+  disconnectStravaBtn.hidden = !connected;
 }
 
 const statusEl = getRequiredElement("status", HTMLDivElement);
@@ -108,6 +122,45 @@ export function renderItems(points: ActivityPoint[]): void {
 
     itemsEl.appendChild(listItem);
   }
+}
+
+const stravaItemsEl = getRequiredElement("stravaItems", HTMLUListElement);
+const stravaEmptyStateEl = getRequiredElement("stravaEmptyState", HTMLParagraphElement);
+
+export function renderStravaActivities(activities: StravaActivity[]): void {
+  stravaItemsEl.innerHTML = "";
+
+  if (!activities.length) {
+    stravaEmptyStateEl.classList.remove("hidden");
+    return;
+  }
+
+  stravaEmptyStateEl.classList.add("hidden");
+
+  const sorted = [...activities].sort(
+    (left, right) => new Date(right.start_date).getTime() - new Date(left.start_date).getTime()
+  );
+
+  for (const activity of sorted.slice(0, 12)) {
+    const listItem = document.createElement("li");
+    listItem.className = "item";
+
+    const minutes = activity.moving_time / 60;
+    const distanceLabel = formatDistanceLabel(activity.distance / 1000);
+
+    listItem.innerHTML = [
+      `<div class="item-top"><span>${escapeHtml(activity.name)}</span><span>${Math.round(minutes)}m</span></div>`,
+      `<div class="item-meta">${escapeHtml(activity.type)} · ${escapeHtml(distanceLabel)}</div>`,
+      `<div class="item-meta">${escapeHtml(new Date(activity.start_date).toLocaleString())}</div>`,
+    ].join("");
+
+    stravaItemsEl.appendChild(listItem);
+  }
+}
+
+export function clearStravaActivities(): void {
+  stravaItemsEl.innerHTML = "";
+  stravaEmptyStateEl.classList.remove("hidden");
 }
 
 export function clearMetricsAndItems(): void {

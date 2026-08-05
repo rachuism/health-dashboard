@@ -496,6 +496,20 @@
       <ul id="items" class="list"></ul>
       <p id="emptyState" class="subtitle">No response parsed yet.</p>
     </section>
+
+    <section class="panel controls">
+      <div class="control-row">
+        <label>Strava Account</label>
+        <div id="stravaAuthState" class="auth-state">Not connected</div>
+      </div>
+      <div class="button-row">
+        <button class="btn-primary" id="connectStravaBtn" type="button">Connect Strava</button>
+        <button class="btn-neutral" id="disconnectStravaBtn" type="button" hidden>Disconnect</button>
+      </div>
+      <h2 style="margin:14px 0 10px; font-size:1rem; color:var(--muted); text-transform:uppercase; letter-spacing:.3px;">Recent Strava Activities</h2>
+      <ul id="stravaItems" class="list"></ul>
+      <p id="stravaEmptyState" class="subtitle">No activities yet.</p>
+    </section>
   </main>
 
   <script src="https://accounts.google.com/gsi/client" async></script>

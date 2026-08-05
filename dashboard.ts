@@ -4,14 +4,19 @@ import { type ActivityPoint, extractJsonText, getPointsFromParsedResponse } from
 import {
   clearBtn,
   clearMetricsAndItems,
+  clearStravaActivities,
+  connectStravaBtn,
+  disconnectStravaBtn,
   fetchBtn,
   jsonInput,
   mockBtn,
   renderBtn,
   renderItems,
   renderMetrics,
+  renderStravaActivities,
   setAuthState,
   setStatus,
+  setStravaAuthState,
   signInBtn,
   signOutBtn,
 } from "./ui.js";
@@ -23,7 +28,10 @@ import {
   getMockHrvPoints,
   getMockRestingHeartRatePoints,
   getMockSleepPoints,
+  getMockStravaActivities,
 } from "./mock.js";
+import { connectStrava, disconnectStrava, getValidToken as getValidStravaToken, handleRedirectReturn, isStravaConnected } from "./stravaAuth.js";
+import { fetchActivities, parseActivities } from "./stravaApi.js";
 
 function renderCharts(points: ActivityPoint[]): void {
   drawDistanceChart(points);
@@ -127,6 +135,30 @@ function handleSignOut(): void {
   setStatus("Signed out.");
 }
 
+async function fetchStravaActivities(): Promise<void> {
+  setStatus("Fetching activities from Strava...");
+  try {
+    const token = await getValidStravaToken();
+    const result = await fetchActivities(token);
+    if (!result.ok) {
+      setStatus(`Strava API error ${result.status}.`, "error");
+      return;
+    }
+    renderStravaActivities(parseActivities(result.bodyText));
+    setStatus("Strava activities loaded.", "ok");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown error";
+    setStatus(`Strava request failed: ${message}`, "error");
+  }
+}
+
+function handleStravaDisconnect(): void {
+  disconnectStrava();
+  setStravaAuthState(false);
+  clearStravaActivities();
+  setStatus("Disconnected from Strava.");
+}
+
 function loadMockData(): void {
   const points = getMockExercisePoints();
   jsonInput.value = JSON.stringify({ point: points }, null, 2);
@@ -136,6 +168,7 @@ function loadMockData(): void {
   drawHrvRing(getMockHrvPoints());
   drawRestingHeartRateRing(getMockRestingHeartRatePoints());
   drawSleepRing(getMockSleepPoints());
+  renderStravaActivities(getMockStravaActivities());
   setStatus("Showing mock data — not from your account.", "ok");
 }
 
@@ -145,6 +178,7 @@ function clearAll(): void {
   clearDistanceChart();
   clearZoneChart();
   clearVitalsRings();
+  clearStravaActivities();
   setStatus("Cleared.");
 }
 
@@ -154,5 +188,28 @@ fetchBtn.addEventListener("click", fetchFromApi);
 renderBtn.addEventListener("click", parseAndRender);
 mockBtn.addEventListener("click", loadMockData);
 clearBtn.addEventListener("click", clearAll);
+connectStravaBtn.addEventListener("click", connectStrava);
+disconnectStravaBtn.addEventListener("click", handleStravaDisconnect);
 
 setAuthState(false);
+
+// Strava state survives reloads (unlike Google's in-memory-only token), so it
+// needs an explicit hydrate-then-handle-redirect step on load. This runs
+// after setAuthState(false) above (that call is Google-only) but must finish
+// before anything else touches Strava UI state.
+async function initStrava(): Promise<void> {
+  const result = await handleRedirectReturn();
+  if (result.status === "error") {
+    setStatus(result.message, "error");
+  } else if (result.status === "connected") {
+    setStatus("Connected to Strava.", "ok");
+  }
+
+  const connected = isStravaConnected();
+  setStravaAuthState(connected);
+  if (connected) {
+    await fetchStravaActivities();
+  }
+}
+
+void initStrava();
