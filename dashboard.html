@@ -490,6 +490,18 @@
       </div>
       <p id="recoveryStatus" class="subtitle">No response fetched yet.</p>
       <ul id="recoveryBreakdown" class="list"></ul>
+
+      <div class="control-row" style="margin-top:14px">
+        <label>How did today actually feel?</label>
+        <div class="button-row">
+          <button class="btn-neutral" id="feelingBadBtn" type="button">Bad</button>
+          <button class="btn-neutral" id="feelingOkayBtn" type="button">Okay</button>
+          <button class="btn-neutral" id="feelingGoodBtn" type="button">Good</button>
+        </div>
+        <p id="feelingState" class="subtitle"></p>
+      </div>
+      <p id="feelingConcordance" class="chart-note" style="text-align:left;margin-bottom:10px"></p>
+
       <p class="chart-note" style="text-align:left">A small autoencoder trained with PyTorch on your own history, exported to ONNX. It runs entirely in this browser tab — nothing is sent to a server. Shows reconstruction error per metric, not a proprietary score. <a href="/ml/README.md" target="_blank" rel="noopener">How it's trained</a>.</p>
     </section>
 

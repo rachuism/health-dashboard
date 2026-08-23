@@ -9,24 +9,37 @@ import {
   latestHrvMs,
   latestRestingHeartRateBpm,
 } from "./parse.js";
-import { getTodayEntry, isCompleteEntry, recordTodayMetrics } from "./history.js";
+import {
+  type Feeling,
+  getFeelingConcordance,
+  getTodayEntry,
+  isCompleteEntry,
+  recordTodayFeeling,
+  recordTodayMetrics,
+} from "./history.js";
 import { scoreToday } from "./recovery.js";
 import {
   clearBtn,
+  clearFeelingUi,
   clearMetricsAndItems,
   clearRecoverySignal,
   clearStravaActivities,
   connectStravaBtn,
   disconnectStravaBtn,
+  feelingBadBtn,
+  feelingGoodBtn,
+  feelingOkayBtn,
   fetchBtn,
   jsonInput,
   mockBtn,
   renderBtn,
+  renderFeelingConcordance,
   renderItems,
   renderMetrics,
   renderRecoverySignal,
   renderStravaActivities,
   setAuthState,
+  setFeelingState,
   setRecoveryStatus,
   setStatus,
   setStravaAuthState,
@@ -159,11 +172,26 @@ async function updateRecoverySignal(): Promise<void> {
 
   setRecoveryStatus("Scoring today's recovery signal... (first time on this device downloads a small local scoring model, ~11MB)");
   try {
-    renderRecoverySignal(await scoreToday(entry));
+    const signal = await scoreToday(entry);
+    renderRecoverySignal(signal);
+    // Recorded so getFeelingConcordance() can later check this verdict
+    // against how the day actually felt, once rated.
+    recordTodayMetrics({ flagged: signal.flagged });
+    refreshFeelingUi();
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown error";
     setRecoveryStatus(`Recovery signal unavailable: ${message}`);
   }
+}
+
+function refreshFeelingUi(): void {
+  setFeelingState(getTodayEntry()?.feeling ?? null);
+  renderFeelingConcordance(getFeelingConcordance());
+}
+
+function handleFeelingClick(feeling: Feeling): void {
+  recordTodayFeeling(feeling);
+  refreshFeelingUi();
 }
 
 async function signIn(): Promise<void> {
@@ -230,6 +258,7 @@ function clearAll(): void {
   clearVitalsRings();
   clearStravaActivities();
   clearRecoverySignal();
+  clearFeelingUi();
   setStatus("Cleared.");
 }
 
@@ -241,8 +270,14 @@ mockBtn.addEventListener("click", loadMockData);
 clearBtn.addEventListener("click", clearAll);
 connectStravaBtn.addEventListener("click", connectStrava);
 disconnectStravaBtn.addEventListener("click", handleStravaDisconnect);
+feelingBadBtn.addEventListener("click", () => handleFeelingClick("bad"));
+feelingOkayBtn.addEventListener("click", () => handleFeelingClick("okay"));
+feelingGoodBtn.addEventListener("click", () => handleFeelingClick("good"));
 
 setAuthState(false);
+// Feeling/concordance come from localStorage, not a network fetch, so they
+// reflect immediately on load rather than waiting for fetchFromApi().
+refreshFeelingUi();
 
 // Strava state survives reloads (unlike Google's in-memory-only token), so it
 // needs an explicit hydrate-then-handle-redirect step on load. This runs

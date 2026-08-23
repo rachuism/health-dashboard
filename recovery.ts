@@ -10,13 +10,13 @@
 // synthetic/placeholder model must never silently ship as someone's real
 // recovery signal.
 
-import type { DailyHistoryEntry } from "./history.js";
+import type { DailyHistoryEntry, MetricKey } from "./history.js";
 
 const ORT_VERSION = "1.20.1"; // pin: the JS glue and the .wasm binary it fetches must match
 const ORT_BASE = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VERSION}/dist/`;
 const ORT_ENTRY = `${ORT_BASE}ort.wasm.min.mjs`;
 
-type FeatureKey = keyof Omit<DailyHistoryEntry, "date">;
+type FeatureKey = MetricKey;
 
 type Normalization = {
   featureOrder: FeatureKey[];

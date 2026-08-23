@@ -4,21 +4,29 @@
 // ml/model.py's FEATURE_ORDER so an export here can be fed straight into
 // ml/train_recovery_model.py --history.
 
+export type Feeling = "bad" | "okay" | "good";
+
+// The four numeric metrics the recovery-signal model trains/scores on --
+// kept as its own type (rather than deriving from DailyHistoryEntry's keys)
+// so recovery.ts's feature vector can't accidentally widen to include
+// `feeling`/`flagged`, which aren't numeric.
+export type MetricKey = "hrvMs" | "rhrBpm" | "sleepMinutes" | "activeZoneMinutes";
+
 export type DailyHistoryEntry = {
   date: string;
   hrvMs: number | null;
   rhrBpm: number | null;
   sleepMinutes: number | null;
   activeZoneMinutes: number | null;
+  // Self-reported, and the recovery-signal verdict once computed -- kept
+  // side by side so getFeelingConcordance() can check whether "flagged"
+  // days actually track how the day felt, instead of just trusting the model's
+  // own math.
+  feeling: Feeling | null;
+  flagged: boolean | null;
 };
 
-type CompleteHistoryEntry = {
-  date: string;
-  hrvMs: number;
-  rhrBpm: number;
-  sleepMinutes: number;
-  activeZoneMinutes: number;
-};
+type CompleteHistoryEntry = DailyHistoryEntry & Record<MetricKey, number>;
 
 const STORAGE_KEY = "health-dashboard/daily-history";
 
@@ -52,11 +60,16 @@ export function recordTodayMetrics(partial: Partial<Omit<DailyHistoryEntry, "dat
   const entries = loadAll();
   const date = todayKey();
   const existing: DailyHistoryEntry =
-    entries[date] ?? { date, hrvMs: null, rhrBpm: null, sleepMinutes: null, activeZoneMinutes: null };
+    entries[date] ??
+    { date, hrvMs: null, rhrBpm: null, sleepMinutes: null, activeZoneMinutes: null, feeling: null, flagged: null };
 
   const updates = Object.fromEntries(Object.entries(partial).filter(([, value]) => value != null));
   entries[date] = { ...existing, ...updates };
   saveAll(entries);
+}
+
+export function recordTodayFeeling(feeling: Feeling): void {
+  recordTodayMetrics({ feeling });
 }
 
 export function getHistory(): DailyHistoryEntry[] {
@@ -76,4 +89,36 @@ export function isCompleteEntry(entry: DailyHistoryEntry): entry is CompleteHist
 // per day.
 export function exportCompleteHistoryJson(): string {
   return JSON.stringify(getHistory().filter(isCompleteEntry), null, 2);
+}
+
+export type FeelingConcordance = {
+  ratedDays: number;
+  badRateWhenFlagged: number | null;
+  badRateWhenNotFlagged: number | null;
+};
+
+const MIN_RATED_DAYS = 10;
+
+// Checks whether "flagged" days actually track how the day felt, rather than
+// just trusting the model's own math (see the conversation this came from --
+// the model had only ever been validated against synthetic anomalies, never
+// against a real person's felt experience). Needs both a feeling rating and
+// a computed recovery signal for the same day, so this only reflects days
+// where updateRecoverySignal() ran and the feeling buttons were used.
+export function getFeelingConcordance(): FeelingConcordance | null {
+  const rated = getHistory().filter(
+    (e): e is DailyHistoryEntry & { feeling: Feeling; flagged: boolean } => e.feeling != null && e.flagged != null
+  );
+  if (rated.length < MIN_RATED_DAYS) return null;
+
+  const flagged = rated.filter((e) => e.flagged);
+  const notFlagged = rated.filter((e) => !e.flagged);
+  const badRate = (days: DailyHistoryEntry[]) =>
+    days.length ? days.filter((e) => e.feeling === "bad").length / days.length : null;
+
+  return {
+    ratedDays: rated.length,
+    badRateWhenFlagged: badRate(flagged),
+    badRateWhenNotFlagged: badRate(notFlagged),
+  };
 }

@@ -5,6 +5,7 @@ import {
   nanosToDateString,
   pickActivityLabel,
 } from "./parse.js";
+import type { Feeling, FeelingConcordance } from "./history.js";
 import type { RecoverySignal } from "./recovery.js";
 import type { StravaActivity } from "./stravaApi.js";
 
@@ -199,6 +200,35 @@ export function renderRecoverySignal(signal: RecoverySignal): void {
 
 export function clearRecoverySignal(): void {
   setRecoveryStatus("No response fetched yet.");
+}
+
+export const feelingBadBtn = getRequiredElement("feelingBadBtn", HTMLButtonElement);
+export const feelingOkayBtn = getRequiredElement("feelingOkayBtn", HTMLButtonElement);
+export const feelingGoodBtn = getRequiredElement("feelingGoodBtn", HTMLButtonElement);
+
+const feelingStateEl = getRequiredElement("feelingState", HTMLParagraphElement);
+const feelingConcordanceEl = getRequiredElement("feelingConcordance", HTMLParagraphElement);
+
+const FEELING_LABELS: Record<Feeling, string> = { bad: "Bad", okay: "Okay", good: "Good" };
+
+export function setFeelingState(feeling: Feeling | null): void {
+  feelingStateEl.textContent = feeling ? `Marked as: ${FEELING_LABELS[feeling]}` : "";
+}
+
+export function renderFeelingConcordance(concordance: FeelingConcordance | null): void {
+  if (!concordance) {
+    feelingConcordanceEl.textContent = "";
+    return;
+  }
+  const pct = (rate: number | null) => (rate == null ? "n/a" : `${Math.round(rate * 100)}%`);
+  feelingConcordanceEl.textContent =
+    `Over ${concordance.ratedDays} rated days: felt "Bad" on ${pct(concordance.badRateWhenFlagged)} of flagged days ` +
+    `vs. ${pct(concordance.badRateWhenNotFlagged)} of non-flagged days.`;
+}
+
+export function clearFeelingUi(): void {
+  setFeelingState(null);
+  renderFeelingConcordance(null);
 }
 
 export function clearMetricsAndItems(): void {
