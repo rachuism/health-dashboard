@@ -1,9 +1,20 @@
 import { fetchDataPoints } from "./api.js";
 import { getValidToken, requestToken, signOut } from "./auth.js";
-import { type ActivityPoint, extractJsonText, getPointsFromParsedResponse } from "./parse.js";
+import {
+  aggregateActiveZoneMinutes,
+  aggregateSleepMinutes,
+  type ActivityPoint,
+  extractJsonText,
+  getPointsFromParsedResponse,
+  latestHrvMs,
+  latestRestingHeartRateBpm,
+} from "./parse.js";
+import { getTodayEntry, isCompleteEntry, recordTodayMetrics } from "./history.js";
+import { scoreToday } from "./recovery.js";
 import {
   clearBtn,
   clearMetricsAndItems,
+  clearRecoverySignal,
   clearStravaActivities,
   connectStravaBtn,
   disconnectStravaBtn,
@@ -13,8 +24,10 @@ import {
   renderBtn,
   renderItems,
   renderMetrics,
+  renderRecoverySignal,
   renderStravaActivities,
   setAuthState,
+  setRecoveryStatus,
   setStatus,
   setStravaAuthState,
   signInBtn,
@@ -72,12 +85,16 @@ function parseAndRender(): void {
 async function fetchVitalMetric(
   token: string,
   dataType: string,
-  render: (points: ActivityPoint[]) => void
+  render: (points: ActivityPoint[]) => void,
+  onFetched?: (points: ActivityPoint[]) => void
 ): Promise<void> {
   try {
     const result = await fetchDataPoints(token, dataType);
     const points = result.ok ? getPointsFromParsedResponse(JSON.parse(result.bodyText)) : [];
     render(points);
+    // Only record on a genuinely successful fetch -- an empty `points` from a
+    // failed/thrown request must never be mistaken for "confirmed zero" data.
+    if (result.ok) onFetched?.(points);
   } catch {
     render([]);
   }
@@ -104,15 +121,48 @@ async function fetchFromApi(): Promise<void> {
     }
 
     parseAndRender();
+    // Re-parsed from the same bodyText parseAndRender() just used (it reads
+    // from jsonInput.value internally and doesn't hand points back out) --
+    // duplicated here only for the history write below.
+    recordTodayMetrics({
+      activeZoneMinutes: aggregateActiveZoneMinutes(getPointsFromParsedResponse(JSON.parse(result.bodyText))),
+    });
 
     await Promise.all([
-      fetchVitalMetric(token, "heart-rate-variability", drawHrvRing),
-      fetchVitalMetric(token, "daily-resting-heart-rate", drawRestingHeartRateRing),
-      fetchVitalMetric(token, "sleep", drawSleepRing),
+      fetchVitalMetric(token, "heart-rate-variability", drawHrvRing, (points) =>
+        recordTodayMetrics({ hrvMs: latestHrvMs(points) })
+      ),
+      fetchVitalMetric(token, "daily-resting-heart-rate", drawRestingHeartRateRing, (points) =>
+        recordTodayMetrics({ rhrBpm: latestRestingHeartRateBpm(points) })
+      ),
+      fetchVitalMetric(token, "sleep", drawSleepRing, (points) =>
+        recordTodayMetrics({ sleepMinutes: aggregateSleepMinutes(points) })
+      ),
     ]);
+
+    await updateRecoverySignal();
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown error";
     setStatus(`Request failed: ${message}`, "error");
+  }
+}
+
+// Only ever scores today's *real* recorded history (see history.ts) --
+// never the mock flow -- and only once all four of today's metrics were
+// successfully fetched, since the model needs a complete vector.
+async function updateRecoverySignal(): Promise<void> {
+  const entry = getTodayEntry();
+  if (!entry || !isCompleteEntry(entry)) {
+    setRecoveryStatus("Not enough of today's metrics recorded yet.");
+    return;
+  }
+
+  setRecoveryStatus("Scoring today's recovery signal... (first time on this device downloads a small local scoring model, ~11MB)");
+  try {
+    renderRecoverySignal(await scoreToday(entry));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown error";
+    setRecoveryStatus(`Recovery signal unavailable: ${message}`);
   }
 }
 
@@ -179,6 +229,7 @@ function clearAll(): void {
   clearZoneChart();
   clearVitalsRings();
   clearStravaActivities();
+  clearRecoverySignal();
   setStatus("Cleared.");
 }
 

@@ -24,3 +24,17 @@ Thumbs.db
 
 # Local Claude Code settings (machine-specific)
 .claude/settings.local.json
+
+# ML pipeline: generated/trained artifacts, not source. Regenerate with
+# ml/generate_synthetic_history.py and ml/train_recovery_model.py.
+ml/data/*.json
+ml/model/*.onnx
+ml/model/*.json
+ml/venv/
+ml/__pycache__/
+
+# Deployed recovery-signal model: only ever copied here deliberately, once
+# trained on real history (see ml/README.md) -- never auto-committed, so a
+# synthetic/placeholder model can't accidentally ship as someone's real
+# recovery signal.
+/model/

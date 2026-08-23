@@ -189,6 +189,14 @@
       color: var(--ok);
     }
 
+    #recoverySummary.error {
+      color: var(--danger);
+    }
+
+    #recoverySummary.ok {
+      color: var(--ok);
+    }
+
     .auth-state {
       font-size: 0.9rem;
       font-weight: 500;
@@ -281,6 +289,10 @@
       font-size: 0.78rem;
       line-height: 1.4;
       text-align: center;
+    }
+
+    .chart-note a {
+      color: var(--accent-3);
     }
 
     .metric {
@@ -469,6 +481,16 @@
         </div>
         <p class="chart-note">Total sleep minus awake time. The 8h ring is a common reference, not a verdict.</p>
       </article>
+    </section>
+
+    <section class="panel">
+      <div class="chart-head">
+        <h2>Recovery Signal</h2>
+        <span id="recoverySummary">-</span>
+      </div>
+      <p id="recoveryStatus" class="subtitle">No response fetched yet.</p>
+      <ul id="recoveryBreakdown" class="list"></ul>
+      <p class="chart-note" style="text-align:left">A small autoencoder trained with PyTorch on your own history, exported to ONNX. It runs entirely in this browser tab — nothing is sent to a server. Shows reconstruction error per metric, not a proprietary score. <a href="/ml/README.md" target="_blank" rel="noopener">How it's trained</a>.</p>
     </section>
 
     <section class="panel charts">

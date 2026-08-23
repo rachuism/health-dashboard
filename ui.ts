@@ -5,6 +5,7 @@ import {
   nanosToDateString,
   pickActivityLabel,
 } from "./parse.js";
+import type { RecoverySignal } from "./recovery.js";
 import type { StravaActivity } from "./stravaApi.js";
 
 function getRequiredElement<T extends Element>(id: string, ctor: { new (): T; prototype: T }): T {
@@ -161,6 +162,43 @@ export function renderStravaActivities(activities: StravaActivity[]): void {
 export function clearStravaActivities(): void {
   stravaItemsEl.innerHTML = "";
   stravaEmptyStateEl.classList.remove("hidden");
+}
+
+const recoverySummaryEl = getRequiredElement("recoverySummary", HTMLSpanElement);
+const recoveryStatusEl = getRequiredElement("recoveryStatus", HTMLParagraphElement);
+const recoveryBreakdownEl = getRequiredElement("recoveryBreakdown", HTMLUListElement);
+
+const RECOVERY_FEATURE_LABELS: Record<string, string> = {
+  hrvMs: "HRV",
+  rhrBpm: "Resting heart rate",
+  sleepMinutes: "Sleep",
+  activeZoneMinutes: "Active zone minutes",
+};
+
+export function setRecoveryStatus(message: string): void {
+  recoveryStatusEl.textContent = message;
+  recoveryStatusEl.classList.remove("hidden");
+  recoverySummaryEl.textContent = "-";
+  recoveryBreakdownEl.innerHTML = "";
+}
+
+export function renderRecoverySignal(signal: RecoverySignal): void {
+  recoveryStatusEl.classList.add("hidden");
+  recoverySummaryEl.textContent = signal.flagged ? "Atypical day" : "Within your normal range";
+  recoverySummaryEl.className = signal.flagged ? "error" : "ok";
+
+  recoveryBreakdownEl.innerHTML = "";
+  for (const { feature, error } of signal.perFeature) {
+    const listItem = document.createElement("li");
+    listItem.className = "item";
+    const label = RECOVERY_FEATURE_LABELS[feature] ?? feature;
+    listItem.innerHTML = `<div class="item-top"><span>${escapeHtml(label)}</span><span>${error.toFixed(2)}</span></div>`;
+    recoveryBreakdownEl.appendChild(listItem);
+  }
+}
+
+export function clearRecoverySignal(): void {
+  setRecoveryStatus("No response fetched yet.");
 }
 
 export function clearMetricsAndItems(): void {
